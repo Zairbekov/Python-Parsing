@@ -1,0 +1,90 @@
+import time
+
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.action_chains import ActionChains
+from bs4 import BeautifulSoup
+from selenium import webdriver
+
+chrome_path = r"C:\Users\ular\Downloads/chromedriver.exe"
+searchNumber = '+996554377797'
+driver = webdriver.Chrome(chrome_path)
+driver.get(
+    "https://ok.ru/dk?st.cmd=anonymPasswordRecoveryNew&st.registrationAction=ValidatePhoneNumber&st.recoveryMethod=Phone&st._aid=AnonymPasswordRecoveryNew_RecoveryMethod_EnterPhone")
+elem = driver.find_element_by_id("field_phone")
+elem.clear()
+elem.send_keys(searchNumber)
+but = driver.find_element_by_id("proceedRegistration")
+but.click()
+driver.implicitly_wait(20)
+print(driver.current_url)
+userName = driver.find_element_by_class_name("recovery_profile").text
+print(len(userName))
+for i in range(len(userName)):
+    if userName[i] == " ":
+        fname = userName[0:i]
+        lname = userName[i + 1:i + 2]
+        count = i
+driver.get("https://ok.ru/dk?st.cmd=anonymMain")
+login = driver.find_element_by_id("field_email")
+login.send_keys("+996500010302")
+pas = driver.find_element_by_id("field_password")
+pas.send_keys("14010308517")
+butt = driver.find_element_by_xpath('//*[@id="anonymPageContent"]/div[2]/div/div[3]/form/div[5]/div[1]/input')
+butt.submit()
+driver.get('https://www.ok.ru/search?st.query='+fname+'&st.mode=Users&st.grmode=Groups&st.posted=set')
+while True:
+    lastHeight = driver.execute_script("return document.body.scrollHeight")
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(1)
+    newHeight = driver.execute_script("return document.body.scrollHeight")
+    if newHeight == lastHeight:
+        try:
+            link = driver.find_element_by_link_text('Show more')
+            ActionChains(driver).move_to_element(link).perform()
+            link.click()
+        except NoSuchElementException:
+            break
+    lastHeight = newHeight
+lis = []
+lisName = []
+soup = BeautifulSoup(driver.page_source)
+driver.implicitly_wait(20)
+results = soup.find_all('a', {'class': 'gs_result_i_t_name o'}, )
+for elm in results:
+    lis.append(elm['href'])
+    lisName.append(elm.text)
+driver.get('https://www.ok.ru/dk?st.cmd=anonymMain&st.ofdp=on&st.udl=571927970651')
+butDelete = driver.find_element_by_xpath('//*[@id="anonymPageContent"]/div[2]/div/div[5]/div[2]/a[1]')
+butDelete.click()
+for i in range(len(lisName)):
+    if len(userName) == len(lisName[i]):
+        if lname == lisName[i][count+1:count+2]:
+            print(lname,lisName[i][count+1:count+2])
+            driver.get(
+                'https://www.ok.ru/dk?st.cmd=anonymPasswordRecoveryNew&st.registrationAction=ValidateLink&st.recoveryMethod=Link&st._aid=AnonymPasswordRecoveryNew_RecoveryMethod_EnterLink')
+            element = driver.find_element_by_id("field_recoveryData")
+            element.send_keys('https://www.ok.ru' +lis[i])
+            driver.implicitly_wait(20)
+            try:
+                butSearch = driver.find_element_by_xpath(
+                    '//*[@id="hook_Block_AnonymPasswordRecoveryNew"]/div/div/div[3]/div/input')
+                butSearch.click()
+            except NoSuchElementException:
+                continue
+            try:
+                nomer = driver.find_element_by_xpath(
+                    '//*[@id="hook_Block_AnonymPasswordRecoveryNew"]/div/div/div[4]/div[1]/ul/li/span/label/div[1]').text
+            except NoSuchElementException:
+                continue
+            newNomer = nomer[13:22]
+            sNumber = searchNumber[0:9]
+            print(newNomer, sNumber)
+            if newNomer == sNumber:
+                print("well done")
+                print(lisName[i])
+                print(lis[i])
+                driver.get('https://www.ok.ru'+lis[i])
+                break
+        else: continue
+    else:
+        continue
